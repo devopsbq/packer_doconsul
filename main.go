@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/igvaquero18/packer_doconsul/doconsul"
+	"github.com/devopsbq/packer_doconsul/doconsul"
 	"github.com/mitchellh/packer/packer/plugin"
 )
 
