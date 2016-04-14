@@ -109,8 +109,8 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 	}
 
 	kvpair := api.KVPair{Key: fmt.Sprintf("%s%s/%s", consulPrefixKey, p.config.SnapshotName, key), Value: []byte(snapshotID)}
-	log.Printf(fmt.Sprintf("Putting key %s with value %s in consul...", key, snapshotID))
-	ui.Message(fmt.Sprintf("Putting key %s with value %s in consul...", key, snapshotID))
+	log.Printf(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
+	ui.Message(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
 	if _, err = p.client.KV().Put(&kvpair, nil); err != nil {
 		return a, false, err
 	}
