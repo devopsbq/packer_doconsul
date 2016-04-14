@@ -13,7 +13,7 @@ import (
 
 const (
 	digitalOceanBuilderID = "pearkes.digitalocean"
-	consulPrefixKey       = "packer/doconsul/"
+	consulPrefixKey       = "snaps/do/"
 )
 
 // Config contains configuration specific to this post-processor.
@@ -102,13 +102,13 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 		return a, false, err
 	}
 
-	key := p.config.SnapshotName
+	key := "latest"
 
 	if p.config.SnapshotVersion != "" {
-		key = fmt.Sprintf("%s-%s", key, p.config.SnapshotVersion)
+		key = p.config.SnapshotVersion
 	}
 
-	kvpair := api.KVPair{Key: fmt.Sprintf("%s%s", consulPrefixKey, key), Value: []byte(snapshotID)}
+	kvpair := api.KVPair{Key: fmt.Sprintf("%s%s/%s", consulPrefixKey, p.config.SnapshotName, key), Value: []byte(snapshotID)}
 	log.Printf(fmt.Sprintf("Putting key %s with value %s in consul...", key, snapshotID))
 	ui.Message(fmt.Sprintf("Putting key %s with value %s in consul...", key, snapshotID))
 	if _, err = p.client.KV().Put(&kvpair, nil); err != nil {
