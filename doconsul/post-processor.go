@@ -25,6 +25,12 @@ type Config struct {
 	ConsulScheme  string `mapstructure:"consul_scheme"`
 	ConsulToken   string `mapstructure:"consul_token"`
 
+	// Experimental TLS support
+	// CAFile          string `mapstructure:"ca_file"`
+	// CertFile        string `mapstructure:"cert_file"`
+	// KeyFile         string `mapstructure:"key_file"`
+	// ConsulTLSVerify bool   `mapstructure:"consul_tls_verify"`
+
 	// Image info fields, which will be stored in Consul
 	SnapshotName    string `mapstructure:"snapshot_name"` // Required
 	SnapshotVersion string `mapstructure:"snapshot_version"`
@@ -54,7 +60,15 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 		"snapshot_name": &p.config.SnapshotName,
 	}
 
+	// if any of the TLS certificates is set, the others also must be set.
+	// if p.config.CAFile != "" || p.config.CertFile != "" || p.config.KeyFile != "" {
+	// 	templates["ca_file"] = &p.config.CAFile
+	// 	templates["cert_file"] = &p.config.CertFile
+	// 	templates["key_file"] = &p.config.KeyFile
+	// }
+
 	// verifying configuration is set
+	log.Printf("Fields to check: %v", templates)
 	for key, value := range templates {
 		if *value == "" {
 			e := fmt.Errorf("%s must be set", key)
@@ -83,7 +97,6 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 		return nil, false, err
 	}
 
-	log.Printf("Creating consul client")
 	consulConfig := api.DefaultConfig()
 	if p.config.ConsulAddress != "" {
 		consulConfig.Address = p.config.ConsulAddress
@@ -97,6 +110,23 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 		consulConfig.Token = p.config.ConsulToken
 	}
 
+	// if p.config.CAFile != "" {
+	// 	p.config.ConsulScheme = "https"
+	// 	apiTLSConfig := &api.TLSConfig{
+	// 		Address:  p.config.ConsulAddress,
+	// 		CAFile:   p.config.CAFile,
+	// 		CertFile: p.config.CertFile,
+	// 		KeyFile:  p.config.KeyFile,
+	// 	}
+	//
+	// 	transport := http.Transport{}
+	// 	if transport.TLSClientConfig, err = api.SetupTLSConfig(apiTLSConfig); err != nil {
+	// 		return nil, false, err
+	// 	}
+	// 	consulConfig.HttpClient.Transport = transport
+	// }
+	//
+	log.Printf("Creating consul client with config: %v", consulConfig)
 	p.client, err = api.NewClient(consulConfig)
 	if err != nil {
 		return a, false, err
