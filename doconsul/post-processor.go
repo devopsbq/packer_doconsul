@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/config"
 	"github.com/mitchellh/packer/packer"
@@ -26,10 +27,10 @@ type Config struct {
 	ConsulToken   string `mapstructure:"consul_token"`
 
 	// Experimental TLS support
-	// CAFile          string `mapstructure:"ca_file"`
-	// CertFile        string `mapstructure:"cert_file"`
-	// KeyFile         string `mapstructure:"key_file"`
-	// ConsulTLSVerify bool   `mapstructure:"consul_tls_verify"`
+	CAFile         string `mapstructure:"ca_file"`
+	CertFile       string `mapstructure:"cert_file"`
+	KeyFile        string `mapstructure:"key_file"`
+	SkipTLSVerifiy bool   `mapstructure:"skip_tls_verify"`
 
 	// Image info fields, which will be stored in Consul
 	SnapshotName    string `mapstructure:"snapshot_name"` // Required
@@ -61,11 +62,11 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 	}
 
 	// if any of the TLS certificates is set, the others also must be set.
-	// if p.config.CAFile != "" || p.config.CertFile != "" || p.config.KeyFile != "" {
-	// 	templates["ca_file"] = &p.config.CAFile
-	// 	templates["cert_file"] = &p.config.CertFile
-	// 	templates["key_file"] = &p.config.KeyFile
-	// }
+	if p.config.CAFile != "" || p.config.CertFile != "" || p.config.KeyFile != "" {
+		templates["ca_file"] = &p.config.CAFile
+		templates["cert_file"] = &p.config.CertFile
+		templates["key_file"] = &p.config.KeyFile
+	}
 
 	// verifying configuration is set
 	log.Printf("Fields to check: %v", templates)
@@ -110,22 +111,24 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 		consulConfig.Token = p.config.ConsulToken
 	}
 
-	// if p.config.CAFile != "" {
-	// 	p.config.ConsulScheme = "https"
-	// 	apiTLSConfig := &api.TLSConfig{
-	// 		Address:  p.config.ConsulAddress,
-	// 		CAFile:   p.config.CAFile,
-	// 		CertFile: p.config.CertFile,
-	// 		KeyFile:  p.config.KeyFile,
-	// 	}
-	//
-	// 	transport := http.Transport{}
-	// 	if transport.TLSClientConfig, err = api.SetupTLSConfig(apiTLSConfig); err != nil {
-	// 		return nil, false, err
-	// 	}
-	// 	consulConfig.HttpClient.Transport = transport
-	// }
-	//
+	if p.config.CAFile != "" {
+		p.config.ConsulScheme = "https"
+		apiTLSConfig := &api.TLSConfig{
+			Address:  p.config.ConsulAddress,
+			CAFile:   p.config.CAFile,
+			CertFile: p.config.CertFile,
+			KeyFile:  p.config.KeyFile,
+		}
+
+		transport := cleanhttp.DefaultPooledTransport()
+		if transport.TLSClientConfig, err = api.SetupTLSConfig(apiTLSConfig); err != nil {
+			return nil, false, err
+		}
+
+		transport.TLSClientConfig.InsecureSkipVerify = p.config.SkipTLSVerifiy
+		consulConfig.HttpClient.Transport = transport
+	}
+
 	log.Printf("Creating consul client with config: %v", consulConfig)
 	p.client, err = api.NewClient(consulConfig)
 	if err != nil {
@@ -147,7 +150,5 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 
 	return a, true, nil
 }
-
-// TODO: godep?
 
 // TODO: goxc?
