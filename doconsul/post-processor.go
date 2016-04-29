@@ -56,6 +56,19 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 
 	errs := new(packer.MultiError)
 
+	if p.config.ConsulAddress != "" {
+		consulAddr, err := parseConsulAddress(p.config.ConsulAddress)
+		if err != nil {
+			packer.MultiErrorAppend(err, errs)
+		} else {
+			p.config.ConsulAddress = consulAddr
+		}
+	}
+
+	if p.config.ConsulScheme != "" && p.config.ConsulScheme != "http" && p.config.ConsulScheme != "https" {
+		packer.MultiErrorAppend(fmt.Errorf("Invalid Consul scheme: %s", p.config.ConsulScheme), errs)
+	}
+
 	// required configuration
 	templates := map[string]*string{
 		"snapshot_name": &p.config.SnapshotName,
@@ -100,11 +113,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 
 	consulConfig := api.DefaultConfig()
 	if p.config.ConsulAddress != "" {
-		consulConfig.Address, err = parseConsulAddress(p.config.ConsulAddress)
-		if err != nil {
-			log.Printf("Error with Consul address: %s", err.Error())
-			return nil, false, err
-		}
+		consulConfig.Address = p.config.ConsulAddress
 	}
 
 	if p.config.ConsulScheme != "" {
