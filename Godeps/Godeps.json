@@ -3,6 +3,15 @@
 	"GoVersion": "go1.6",
 	"Deps": [
 		{
+			"ImportPath": "github.com/PuerkitoBio/purell",
+			"Comment": "v0.1.0-23-gd69616f",
+			"Rev": "d69616f51cdfcd7514d6a380847a152dfc2a749d"
+		},
+		{
+			"ImportPath": "github.com/goware/urlx",
+			"Rev": "86bdc24560383254e8b977da31a823eddf904409"
+		},
+		{
 			"ImportPath": "github.com/hashicorp/consul/api",
 			"Comment": "v0.6.4-256-gadcf935",
 			"Rev": "adcf93535058234780f9aaffb40497ba194f60a0"
@@ -97,8 +106,16 @@
 			"Rev": "eecf4c70c626c7cfbb95c90195bc34d386c74ac6"
 		},
 		{
+			"ImportPath": "github.com/opennota/urlesc",
+			"Rev": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587"
+		},
+		{
 			"ImportPath": "github.com/ugorji/go/codec",
 			"Rev": "a396ed22fc049df733440d90efe17475e3929ccb"
+		},
+		{
+			"ImportPath": "golang.org/x/net/idna",
+			"Rev": "7f88271ea9913b72aca44fa7fc8af919eacc17ce"
 		}
 	]
 }
