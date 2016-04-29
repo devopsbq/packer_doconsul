@@ -100,7 +100,11 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 
 	consulConfig := api.DefaultConfig()
 	if p.config.ConsulAddress != "" {
-		consulConfig.Address = p.config.ConsulAddress
+		consulConfig.Address, err = parseConsulAddress(p.config.ConsulAddress)
+		if err != nil {
+			log.Printf("Error with Consul address: %s", err.Error())
+			return nil, false, err
+		}
 	}
 
 	if p.config.ConsulScheme != "" {
