@@ -59,14 +59,14 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 	if p.config.ConsulAddress != "" {
 		consulAddr, err := parseConsulAddress(p.config.ConsulAddress)
 		if err != nil {
-			packer.MultiErrorAppend(err, errs)
+			errs = packer.MultiErrorAppend(err, errs)
 		} else {
 			p.config.ConsulAddress = consulAddr
 		}
 	}
 
 	if p.config.ConsulScheme != "" && p.config.ConsulScheme != "http" && p.config.ConsulScheme != "https" {
-		packer.MultiErrorAppend(fmt.Errorf("Invalid Consul scheme: %s", p.config.ConsulScheme), errs)
+		errs = packer.MultiErrorAppend(fmt.Errorf("Invalid Consul scheme: %s", p.config.ConsulScheme), errs)
 	}
 
 	// required configuration
