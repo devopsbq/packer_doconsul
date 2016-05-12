@@ -1,7 +1,7 @@
 # Changelog
 
 ### 0.3.0
-* Added the option `ignore_connection_errors`, which skips Consul connection errors. Enabling this option makes the post-processor **useless**.
+* Added the option `ignore_connection_errors`, which skips Consul connection errors. Enabling this option makes the post-processor ignoring errors if Consul is unavailable, so it does nothing.
 
 ### 0.2.0
 
