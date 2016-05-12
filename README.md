@@ -37,6 +37,7 @@ The following parameters are **optional**:
 * `cert_file`: A file path to a PEM-encoded certificate.
 * `key_file`: A the file path to a PEM-encoded private key.
 * `skip_tls_verify`: Skip server-side certificate validation.
+* `ignore_connection_errors`: Skip Consul connection errors. This option makes this post-processor **useless**.
 
 Remember that this post-processor will store your DigitalOcean's image ID at path `snaps/do/<snapshot_name>/<snapshot_version>`.
 

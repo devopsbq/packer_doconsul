@@ -2,6 +2,7 @@ package doconsul
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/goware/urlx"
@@ -12,6 +13,14 @@ const (
 	defaultConsulHost    = "127.0.0.1"
 	defaultConsulAPIPort = "8500"
 )
+
+func (c *Config) errorHandler(e error) error {
+	_, found := e.(*net.OpError)
+	if c.IgnoreConnectionErrors && found {
+		return nil
+	}
+	return e
+}
 
 func getImageIDfromDOArtifact(a packer.Artifact) (string, error) {
 	stringArray := strings.Split(a.Id(), ":")

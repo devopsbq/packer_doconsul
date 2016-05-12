@@ -36,6 +36,10 @@ type Config struct {
 	SnapshotName    string `mapstructure:"snapshot_name"` // Required
 	SnapshotVersion string `mapstructure:"snapshot_version"`
 
+	// This is handy when consul server is not ready. Note that, in that case,
+	// this post-processor becomes useless
+	IgnoreConnectionErrors bool `mapstructure:"ignore_connection_errors"`
+
 	ctx interpolate.Context
 }
 
@@ -144,7 +148,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 
 	log.Printf("Creating consul client with config: %v", consulConfig)
 	p.client, err = api.NewClient(consulConfig)
-	if err != nil {
+	if err = p.config.errorHandler(err); err != nil {
 		return a, false, err
 	}
 
@@ -157,7 +161,8 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 	kvpair := api.KVPair{Key: fmt.Sprintf("%s%s/%s", consulPrefixKey, p.config.SnapshotName, key), Value: []byte(snapshotID)}
 	log.Printf(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
 	ui.Message(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
-	if _, err = p.client.KV().Put(&kvpair, nil); err != nil {
+	_, err = p.client.KV().Put(&kvpair, nil)
+	if err = p.config.errorHandler(err); err != nil {
 		return a, false, err
 	}
 
