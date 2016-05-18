@@ -148,7 +148,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 
 	log.Printf("Creating consul client with config: %v", consulConfig)
 	p.client, err = api.NewClient(consulConfig)
-	if err = p.config.errorHandler(err); err != nil {
+	if err != nil {
 		return a, false, err
 	}
 

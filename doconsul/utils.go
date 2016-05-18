@@ -2,7 +2,6 @@ package doconsul
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/goware/urlx"
@@ -15,8 +14,7 @@ const (
 )
 
 func (c *Config) errorHandler(e error) error {
-	_, found := e.(*net.OpError)
-	if c.IgnoreConnectionErrors && found {
+	if c.IgnoreConnectionErrors {
 		return nil
 	}
 	return e
