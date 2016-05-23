@@ -1,12 +1,13 @@
 # packer_doconsul
-A Packer Post Processor for storing DigitalOcean image IDs into Consul.
-The implementation is based on [packer-post-processor-consul][packer-pp]'s, from [bhourigan][bhourigan].
+A Packer Post Processor for storing DigitalOcean and AWS image IDs into Consul.
+The implementation is based on [packer-post-processor-consul][packer-pp]'s, from [bhourigan][bhourigan], and extends his implementation to DigitalOcean provider.
 
-This post-processor takes an image from [DigitalOcean's builder][dobuilder] and stores its ID in Consul, within the path `snaps/do/<snapshot_name>/<snapshot_version>`.
+This post-processor takes an image from [DigitalOcean's builder][dobuilder] or [Amazon Web services's builder][awsbuilder] and stores its ID in Consul, within the path `snaps/[do|aws]/<region>/<snapshot_name>/<snapshot_version>`.
 
 ### Features
 
 * TLS support for secure communication with the Consul API.
+* Token support for [Consul ACLs][consulacl].
 
 ### Installation
 
@@ -37,9 +38,9 @@ The following parameters are **optional**:
 * `cert_file`: A file path to a PEM-encoded certificate.
 * `key_file`: A the file path to a PEM-encoded private key.
 * `skip_tls_verify`: Skip server-side certificate validation.
-* `ignore_connection_errors`: Skip Consul connection errors. This option makes this post-processor ignoring errors if Consul is unavailable, so it does nothing.
+* `ignore_connection_errors`: Skip Consul connection errors. This boolean option makes this post-processor ignoring errors if Consul is unavailable, so it does nothing. By default this is `false`.
 
-Remember that this post-processor will store your DigitalOcean's image ID at path `snaps/do/<snapshot_name>/<snapshot_version>`.
+Remember that this post-processor will store your DigitalOcean's image ID at path `snaps/[do|aws]/<region>/<snapshot_name>/<snapshot_version>`.
 
 ### Basic example
 
@@ -61,3 +62,5 @@ Here is a basic example. As you can see, you can do interpolation for computing 
 [bhourigan]: <https://github.com/bhourigan>
 [dobuilder]: <https://www.packer.io/docs/builders/digitalocean.html>
 [plugins]: <https://www.packer.io/docs/extend/plugins.html>
+[awsbuilder]: <https://www.packer.io/docs/builders/amazon.html>
+[consulacl]: <https://www.consul.io/docs/internals/acl.html>

@@ -6,16 +6,29 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-cleanhttp"
+	"github.com/mitchellh/packer/builder/amazon/ebs"
+	"github.com/mitchellh/packer/builder/amazon/instance"
+	"github.com/mitchellh/packer/builder/digitalocean"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/config"
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 )
 
-const (
-	digitalOceanBuilderID = "pearkes.digitalocean"
-	consulPrefixKey       = "snaps/do/"
-)
+type getIDFunc func(a packer.Artifact) (map[string]string, error)
+
+type providerFunc struct {
+	Provider string
+	Function getIDFunc
+}
+
+var builtins = map[string]providerFunc{
+	digitalocean.BuilderId: providerFunc{"do", getImageIDfromDOArtifact},
+	ebs.BuilderId:          providerFunc{"aws", getImageIDfromAWSArtifact},
+	instance.BuilderId:     providerFunc{"aws", getImageIDfromAWSArtifact},
+}
+
+const consulPrefixKey = "snaps"
 
 // Config contains configuration specific to this post-processor.
 type Config struct {
@@ -105,11 +118,12 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 // PostProcess method implementation
 func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Artifact, bool, error) {
 	log.Printf("Post Processing artifact: %v", a)
-	if a.BuilderId() != digitalOceanBuilderID {
+	builder, ok := builtins[a.BuilderId()]
+	if !ok {
 		return nil, false, fmt.Errorf("Unknown artifact type: %s", a.BuilderId())
 	}
 
-	snapshotID, err := getImageIDfromDOArtifact(a)
+	images, err := builder.Function(a)
 	if err != nil {
 		log.Printf("Error: %s", err.Error())
 		return nil, false, err
@@ -158,11 +172,17 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, a packer.Artifact) (packer.Art
 		key = p.config.SnapshotVersion
 	}
 
-	kvpair := api.KVPair{Key: fmt.Sprintf("%s%s/%s", consulPrefixKey, p.config.SnapshotName, key), Value: []byte(snapshotID)}
-	log.Printf(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
-	ui.Message(fmt.Sprintf("Putting key %s%s/%s with value %s in Consul...", consulPrefixKey, p.config.SnapshotName, key, snapshotID))
-	_, err = p.client.KV().Put(&kvpair, nil)
-	if err = p.config.errorHandler(err); err != nil {
+	var errs []error
+
+	for region, snapshotID := range images {
+		kvpair := api.KVPair{Key: fmt.Sprintf("%s/%s/%s/%s/%s", consulPrefixKey, builder.Provider, region, p.config.SnapshotName, key), Value: []byte(snapshotID)}
+		log.Printf(fmt.Sprintf("Putting key %s/%s/%s/%s/%s with value %s in Consul...", consulPrefixKey, builder.Provider, region, p.config.SnapshotName, key, snapshotID))
+		ui.Message(fmt.Sprintf("Putting key %s/%s/%s/%s/%s with value %s in Consul...", consulPrefixKey, builder.Provider, region, p.config.SnapshotName, key, snapshotID))
+		_, err = p.client.KV().Put(&kvpair, nil)
+		errs = append(errs, err)
+	}
+
+	if err = p.config.errorHandler(errs); err != nil {
 		return a, false, err
 	}
 
